@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapPin, Clock, DollarSign } from 'lucide-react';
+import { MapPin, Clock, DollarSign, X, Check } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Ride, DriverProfile } from '../../types';
 
@@ -11,6 +11,7 @@ interface AvailableRidesProps {
 export function AvailableRides({ driverProfile, onRideAccepted }: AvailableRidesProps) {
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
+  const [processingRideId, setProcessingRideId] = useState<string | null>(null);
 
   useEffect(() => {
     if (driverProfile.is_available && driverProfile.is_approved) {
@@ -23,6 +24,15 @@ export function AvailableRides({ driverProfile, onRideAccepted }: AvailableRides
           { event: 'INSERT', schema: 'public', table: 'rides' },
           () => {
             loadAvailableRides();
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'rides', filter: 'status=eq.pending' },
+          (payload) => {
+            setRides((current) =>
+              current.filter((ride) => ride.id !== (payload.new as Ride).id)
+            );
           }
         )
         .subscribe();
@@ -51,6 +61,7 @@ export function AvailableRides({ driverProfile, onRideAccepted }: AvailableRides
   };
 
   const handleAcceptRide = async (rideId: string) => {
+    setProcessingRideId(rideId);
     try {
       const { error } = await supabase
         .from('rides')
@@ -59,14 +70,29 @@ export function AvailableRides({ driverProfile, onRideAccepted }: AvailableRides
           status: 'accepted',
           accepted_at: new Date().toISOString(),
         })
-        .eq('id', rideId);
+        .eq('id', rideId)
+        .eq('status', 'pending');
 
       if (error) throw error;
 
+      setRides((current) => current.filter((r) => r.id !== rideId));
       onRideAccepted();
-      loadAvailableRides();
     } catch (err) {
       console.error('Error accepting ride:', err);
+      alert('Failed to accept ride. It may have been taken by another driver.');
+    } finally {
+      setProcessingRideId(null);
+    }
+  };
+
+  const handleRejectRide = async (rideId: string) => {
+    setProcessingRideId(rideId);
+    try {
+      setRides((current) => current.filter((r) => r.id !== rideId));
+    } catch (err) {
+      console.error('Error rejecting ride:', err);
+    } finally {
+      setProcessingRideId(null);
     }
   };
 
@@ -106,7 +132,7 @@ export function AvailableRides({ driverProfile, onRideAccepted }: AvailableRides
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Available Rides</h2>
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">Available Rides ({rides.length})</h2>
       <div className="space-y-4">
         {rides.map((ride) => (
           <div
@@ -156,12 +182,24 @@ export function AvailableRides({ driverProfile, onRideAccepted }: AvailableRides
                 <p className="text-xs text-gray-500">Your earnings</p>
               </div>
             </div>
-            <button
-              onClick={() => handleAcceptRide(ride.id)}
-              className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors font-medium"
-            >
-              Accept Ride
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => handleAcceptRide(ride.id)}
+                disabled={processingRideId !== null}
+                className="flex-1 flex items-center justify-center gap-2 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+              >
+                <Check className="w-4 h-4" />
+                Accept
+              </button>
+              <button
+                onClick={() => handleRejectRide(ride.id)}
+                disabled={processingRideId !== null}
+                className="flex-1 flex items-center justify-center gap-2 border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+              >
+                <X className="w-4 h-4" />
+                Skip
+              </button>
+            </div>
           </div>
         ))}
       </div>

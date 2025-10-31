@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { MapPin, Calendar, AlertCircle } from 'lucide-react';
+import { MapPin, Calendar, AlertCircle, Loader } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { getCurrentLocation, isWithinZone } from '../../utils/location';
+import { geocodeAddress } from '../../utils/geocoding';
 import { UniversityZone, Location } from '../../types';
 
 export function RideBooking() {
@@ -15,6 +16,7 @@ export function RideBooking() {
   const [isScheduled, setIsScheduled] = useState(false);
   const [scheduledTime, setScheduledTime] = useState('');
   const [loading, setLoading] = useState(false);
+  const [geocodingLoading, setGeocodingLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [zones, setZones] = useState<UniversityZone[]>([]);
@@ -123,13 +125,24 @@ export function RideBooking() {
     }
   };
 
-  const estimateDropoffLocation = (address: string) => {
-    if (address && currentLocation) {
-      const offset = 0.01;
-      setDropoffLocation({
-        latitude: currentLocation.latitude + offset,
-        longitude: currentLocation.longitude + offset,
-      });
+  const estimateDropoffLocation = async (address: string) => {
+    if (!address) {
+      setDropoffLocation(null);
+      return;
+    }
+
+    setGeocodingLoading(true);
+    try {
+      const location = await geocodeAddress(address);
+      if (location) {
+        setDropoffLocation(location);
+      } else {
+        setError('Could not find the dropoff location. Please try a different address.');
+      }
+    } catch (err) {
+      console.error('Geocoding error:', err);
+    } finally {
+      setGeocodingLoading(false);
     }
   };
 
@@ -181,17 +194,24 @@ export function RideBooking() {
             <MapPin className="w-4 h-4" />
             Dropoff Location
           </label>
-          <input
-            type="text"
-            value={dropoffAddress}
-            onChange={(e) => {
-              setDropoffAddress(e.target.value);
-              estimateDropoffLocation(e.target.value);
-            }}
-            placeholder="Enter destination"
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
+          <div className="relative">
+            <input
+              type="text"
+              value={dropoffAddress}
+              onChange={(e) => {
+                setDropoffAddress(e.target.value);
+                estimateDropoffLocation(e.target.value);
+              }}
+              placeholder="Enter destination"
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+            {geocodingLoading && (
+              <div className="absolute right-3 top-2.5">
+                <Loader className="w-5 h-5 text-gray-400 animate-spin" />
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
