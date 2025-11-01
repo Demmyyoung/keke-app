@@ -3,8 +3,8 @@ import { useAuth } from './contexts/AuthContext';
 import { LoginForm } from './components/Auth/LoginForm';
 import { SignupForm } from './components/Auth/SignupForm';
 import { PassengerDashboard } from './components/Passenger/PassengerDashboard';
-import { DriverDashboard } from './components/Driver/DriverDashboard';
 import { DriverSetup } from './components/Driver/DriverSetup';
+import { KekeRouteDashboard } from './components/Driver/KekeRouteDashboard';
 
 function App() {
   const { user, profile, loading } = useAuth();
@@ -42,7 +42,7 @@ function App() {
     return <PassengerDashboard />;
   }
 
-  return <DriverDashboard />;
+  return <KekeRouteDashboard />;
 }
 
 export default App;
