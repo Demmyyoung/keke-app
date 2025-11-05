@@ -4,6 +4,9 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { DriverSetupPayment } from './DriverSetupPayment';
 
+// Define the available Keke colors
+const KEKE_COLORS = ['Yellow', 'Blue', 'Green', 'Red', 'White', 'Black'];
+
 export function DriverSetup({ onComplete }: { onComplete: () => void }) {
   const { profile } = useAuth();
   const [step, setStep] = useState<'profile' | 'payment'>('profile');
@@ -11,12 +14,13 @@ export function DriverSetup({ onComplete }: { onComplete: () => void }) {
   const [formData, setFormData] = useState({
     vehicle_type: 'Keke NAPEP',
     vehicle_plate: '',
-    vehicle_color: '',
+    vehicle_color: 'Yellow', // Set a default color
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
+// ... (rest of the handleProfileSubmit function remains unchanged)
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -125,18 +129,22 @@ export function DriverSetup({ onComplete }: { onComplete: () => void }) {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Vehicle Color
                 </label>
-                <input
-                  type="text"
+                <select
                   value={formData.vehicle_color}
                   onChange={(e) => setFormData({ ...formData, vehicle_color: e.target.value })}
                   required
-                  placeholder="Yellow"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
+                >
+                  <option value="" disabled>Select a color</option>
+                  {KEKE_COLORS.map((color) => (
+                    <option key={color} value={color}>{color}</option>
+                  ))}
+                </select>
               </div>
 
               <button
                 type="submit"
+// ... (rest of the button and form remains unchanged)
                 disabled={loading}
                 className="w-full flex items-center justify-center gap-2 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
               >
