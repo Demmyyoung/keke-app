@@ -7,22 +7,43 @@ interface DriverSetupPaymentProps {
   onPaymentSetupComplete: (subaccountCode: string) => void;
 }
 
+// Full list of Nigerian banks for easy selection.
+const NIGERIAN_BANKS = [
+  { code: '044', name: 'Access Bank' },
+  { code: '063', name: 'Access Bank (Diamond)' },
+  { code: '050', name: 'EcoBank' },
+  { code: '011', name: 'First Bank of Nigeria' },
+  { code: '058', name: 'Guaranty Trust Bank (GTBank)' },
+  { code: '070', name: 'Fidelity Bank' },
+  { code: '082', name: 'Keystone Bank' },
+  { code: '232', name: 'Sterling Bank' },
+  { code: '032', name: 'Union Bank of Nigeria' },
+  { code: '033', name: 'United Bank for Africa (UBA)' },
+  { code: '035', name: 'Wema Bank' },
+  { code: '076', name: 'Skye Bank (Polaris)' },
+  { code: '221', name: 'Stanbic IBTC Bank' },
+  { code: '057', name: 'Zenith Bank' },
+  { code: '214', name: 'First City Monument Bank (FCMB)' },
+  { code: '301', name: 'Jaiz Bank' },
+  { code: '090', name: 'Providus Bank' },
+  { code: '101', name: 'Wema Bank (ALAT)' },
+  { code: '068', name: 'Standard Chartered Bank' },
+  { code: '304', name: 'Stanbic Mobile Money' },
+  { code: '308', name: 'TagPay' },
+  { code: '309', name: 'Paycom (Opay)' },
+  { code: '990', name: 'Globus Bank' },
+  { code: '103', name: 'Titan Trust Bank' },
+  { code: '080', name: 'Heritage Bank' },
+  { code: '565', name: 'Coronation Merchant Bank' },
+];
+
 export function DriverSetupPayment({ driverId, onPaymentSetupComplete }: DriverSetupPaymentProps) {
   const [bankName, setBankName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const nigerianBanks = [
-    { code: '044', name: 'Access Bank' },
-    { code: '050', name: 'EcoBank' },
-    { code: '011', name: 'First Bank' },
-    { code: '058', name: 'GTBank' },
-    { code: '012', name: 'UBA' },
-    { code: '076', name: 'Zenith Bank' },
-    { code: '035', name: 'Wema Bank' },
-    { code: '033', name: 'United Bank for Africa (UBA)' },
-  ];
+  // NOTE: nigerianBanks replaced with NIGERIAN_BANKS
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +71,7 @@ export function DriverSetupPayment({ driverId, onPaymentSetupComplete }: DriverS
         },
         body: JSON.stringify({
           business_name: `Keke Driver ${driverId.slice(0, 8)}`,
-          settlement_bank: bankName,
+          settlement_bank: bankName, // bankName now holds the Paystack bank code
           account_number: accountNumber,
           percentage_charge: 10,
         }),
@@ -103,7 +124,7 @@ export function DriverSetupPayment({ driverId, onPaymentSetupComplete }: DriverS
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
         >
           <option value="">Choose a bank</option>
-          {nigerianBanks.map((bank) => (
+          {NIGERIAN_BANKS.map((bank) => (
             <option key={bank.code} value={bank.code}>
               {bank.name}
             </option>
